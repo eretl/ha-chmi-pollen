@@ -13,7 +13,7 @@ from .const import DOMAIN, URL, COLOR_THRESHOLDS
 
 _LOGGER = logging.getLogger(__name__)
 
-SCAN_INTERVAL = timedelta(hours=12)  # Update twice daily
+SCAN_INTERVAL = timedelta(hours=3)  # Update twice daily
 
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     coordinator = CHMIPollenCoordinator(hass)
@@ -50,10 +50,15 @@ class CHMIPollenCoordinator(DataUpdateCoordinator):
             def closest_color(color):
                 def distance(c1, c2):
                     return sum((a - b) ** 2 for a, b in zip(c1, c2))
-                return min(COLOR_THRESHOLDS, key=lambda key: distance(color, COLOR_THRESHOLDS[key]))
+                return min(COLOR_THRESHOLDS, key=lambda key: distance(color, COLOR_THRESHOLDS[key][0]))
 
             level = closest_color(avg_color)
-            return {"color": avg_color, "level": level}
+            color_value, numeric_value = COLOR_THRESHOLDS[level]
+            return {
+                "color": avg_color,
+                "level": level,
+                "numeric": numeric_value
+            }
 
         except Exception as e:
             raise UpdateFailed(f"Image processing failed: {e}")
